@@ -94,3 +94,20 @@ button.copy[disabled] { opacity: 0.4; cursor: wait; }
   background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
   padding: 3px 8px; font-size: 12px;
 }
+
+/* ── VPN mode POC card ─────────────────────────────────────────────── */
+.settings.vpn { align-items: center; }
+.vpn-head { display: flex; align-items: center; gap: 10px; width: 100%; }
+.vpn-head .row-push { flex: 1; }
+.poc-tag {
+  font-size: 10px; padding: 1px 6px; border-radius: 8px;
+  border: 1px solid var(--accent); color: var(--accent); vertical-align: 2px;
+}
+.vpn-meta { width: 100%; font-size: 12px; }
+.vpn-log {
+  width: 100%; max-height: 110px; overflow: auto; margin: 6px 0 0;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+  padding: 6px 8px; font: 11px/1.4 Consolas, monospace; color: var(--muted);
+  white-space: pre-wrap;
+}
+.hidden { display: none; }

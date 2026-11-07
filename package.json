@@ -6,6 +6,8 @@
   "scripts": {
     "start": "electron .",
     "smoke": "node smoke.js",
+    "vpn:fetch": "node vpn/fetch-singbox.js",
+    "vpn:smoke": "node tools/vpn-poc-smoke.js",
     "dist": "electron-builder --win"
   },
   "devDependencies": {
@@ -25,6 +27,8 @@
       "lib/**/*",
       "renderer/**/*",
       "assets/**/*",
+      "vpn/scripts/**/*",
+      "vpn/bin/**/*",
       "package.json"
     ],
     "win": {

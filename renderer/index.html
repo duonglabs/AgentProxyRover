@@ -51,6 +51,20 @@
     <div class="muted">Connect a local agent: <code class="mono" id="mcpCmd">–</code></div>
   </section>
 
+  <section class="settings vpn" id="vpnCard">
+    <div class="vpn-head">
+      <span class="dot" id="vpnDot"></span>
+      <b>VPN Mode <span class="poc-tag">POC</span></b>
+      <span class="muted" id="vpnSub">tunnel ALL system traffic → first proxy (TUN via sing-box)</span>
+      <span class="row-push"></span>
+      <button id="btnVpn" class="primary">Start VPN</button>
+    </div>
+    <div class="vpn-meta">
+      <span id="vpnInfo" class="muted">Needs admin (UAC prompt). Start the proxies first — the tunnel exits through proxy #1.</span>
+    </div>
+    <pre id="vpnLog" class="vpn-log hidden"></pre>
+  </section>
+
   <main>
     <table id="proxyTable">
       <thead>
@@ -63,5 +77,6 @@
   </main>
 
   <script src="app.js"></script>
+  <script src="vpn.js"></script>
 </body>
 </html>
