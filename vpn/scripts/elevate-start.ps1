@@ -7,6 +7,17 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 
+# ORPHAN SWEEP — this prompt is already elevated, so any leftover sing-box of
+# THIS exact binary from a crashed/declined-stop session dies here, before a
+# new one starts (a stray auto_route adapter keeps routing the whole machine).
+$exe = (Resolve-Path -LiteralPath $SingBox -ErrorAction SilentlyContinue).Path
+if ($exe) {
+  Get-Process -ErrorAction SilentlyContinue |
+    Where-Object { $_.Path -and ($_.Path -ieq $exe) } |
+    Stop-Process -Force -ErrorAction SilentlyContinue
+}
+Start-Sleep -Milliseconds 500
+
 # NOTE: Windows PowerShell 5.1 joins -ArgumentList elements WITHOUT quoting,
 # so paths with spaces must arrive pre-quoted as one string.
 $argList = 'run -c "' + $Config + '"'

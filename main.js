@@ -82,6 +82,24 @@ async function startMcp() {
 
 app.whenReady().then(async () => {
   app.setAppUserModelId('com.agentproxy.app'); // Windows taskbar identity
+
+  // Safety net: a VPN client must not die because stdout broke (EPIPE) or a
+  // socket reset — swallow transport-class errors, log the rest and continue.
+  // (Without this, Electron shows the fatal "JavaScript error in the main
+  // process" dialog and the whole app — proxies + MCP + VPN state — is gone.)
+  const fatalish = (e) => {
+    const m = String(e?.message ?? e);
+    return /EPIPE|ECONNRESET|write after end|stream was destroyed/i.test(m);
+  };
+  process.on('uncaughtException', (e) => {
+    if (fatalish(e)) return;
+    try { console.error('[main] uncaught:', e?.stack ?? e); } catch { /* stdout gone */ }
+  });
+  process.on('unhandledRejection', (e) => {
+    if (fatalish(e)) return;
+    try { console.error('[main] unhandled rejection:', e?.stack ?? e); } catch { /* stdout gone */ }
+  });
+
   manager = new ProxyManager(app.getPath('userData'), () => {
     win?.webContents.send('state', fullState());
   }, { appVersion: app.getVersion() });

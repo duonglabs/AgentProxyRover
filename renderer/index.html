@@ -14,67 +14,83 @@
       <span class="badge" id="planBadge">FREE · 20 proxies</span>
     </div>
     <div class="head-actions">
-      <button id="btnToggle" class="primary">Connect</button>
+      <div class="mode-switch" id="modeSwitch">
+        <button id="modeVpn" class="mode-btn active">VPN</button>
+        <button id="modeProxy" class="mode-btn">Proxy</button>
+      </div>
     </div>
   </header>
 
-  <section class="meta">
-    <div>Your IP: <b id="publicIp">–</b></div>
-    <div id="quotaLine" class="quota"></div>
-    <div id="msg" class="msg"></div>
-  </section>
-
-  <section class="settings">
-    <label>Bind IP <input id="bindIp" placeholder="127.0.0.1" /></label>
-    <label>Port range
-      <span class="row">
-        <input id="portStart" type="number" min="1024" max="65535" />
-        <span class="muted">→</span>
-        <span id="portEnd" class="muted">8801+20</span>
-      </span>
-    </label>
-    <label>Count <input id="portCount" type="number" min="1" max="20" /></label>
-    <label>MCP port <input id="mcpPort" type="number" min="1024" max="65535" /></label>
-    <button id="btnSave">Save</button>
-  </section>
-
-  <section class="settings mcp">
-    <div class="mcp-line">
-      <span class="dot" id="mcpDot"></span>
-      <b>MCP for AI agents</b>
-      <span id="mcpTools" class="muted">–</span>
+  <!-- ── VPN view (Kaspersky-style hero) ─────────────────────────── -->
+  <section id="viewVpn" class="vpn-view">
+    <div class="vpn-hero">
+      <h1 class="vpn-brand">AgentProxy VPN</h1>
+      <button id="vpnBigToggle" class="big-toggle" aria-pressed="false" title="Bật/tắt VPN">
+        <span class="knob"></span>
+      </button>
+      <div id="vpnHint" class="vpn-hint">Nhấn vào đây để bật VPN</div>
+      <div id="vpnStatus" class="vpn-status"></div>
+      <div id="vpnError" class="vpn-error"></div>
     </div>
-    <div class="mcp-line">
-      <code class="mono" id="mcpUrl">–</code>
-      <button class="copy" id="btnCopyMcp">copy</button>
-    </div>
-    <div class="muted">Connect a local agent: <code class="mono" id="mcpCmd">–</code></div>
-  </section>
-
-  <section class="settings vpn" id="vpnCard">
-    <div class="vpn-head">
-      <span class="dot" id="vpnDot"></span>
-      <b>VPN Mode <span class="poc-tag">POC</span></b>
-      <span class="muted" id="vpnSub">tunnel ALL system traffic → first proxy (TUN via sing-box)</span>
-      <span class="row-push"></span>
-      <button id="btnVpn" class="primary">Start VPN</button>
-    </div>
-    <div class="vpn-meta">
-      <span id="vpnInfo" class="muted">Needs admin (UAC prompt). Start the proxies first — the tunnel exits through proxy #1.</span>
+    <div class="vpn-cards">
+      <button class="vpn-card" id="vpnLocCard" title="Xem danh sách proxy (vị trí hiện tại = proxy #1)">
+        <div class="vpn-card-label">Vị trí</div>
+        <div class="vpn-card-value"><b id="vpnLoc">—</b><span id="vpnLocSub" class="muted"></span></div>
+      </button>
+      <div class="vpn-card">
+        <div class="vpn-card-label">Gói hiện tại</div>
+        <div class="vpn-card-value"><b>Không giới hạn</b></div>
+      </div>
     </div>
     <pre id="vpnLog" class="vpn-log hidden"></pre>
   </section>
 
-  <main>
-    <table id="proxyTable">
-      <thead>
-        <tr><th>#</th><th>Proxy (local)</th><th>Country</th><th>Exit IP</th><th>Active</th><th class="num">Req</th><th class="num">↑ / ↓</th><th>OK / Fail</th><th>Actions</th></tr>
-      </thead>
-      <tbody id="rows">
-        <tr><td colspan="9" class="empty">Press <b>Connect</b> to fetch your 20 free proxies.</td></tr>
-      </tbody>
-    </table>
-  </main>
+  <!-- ── Proxy view (the original app screen) ────────────────────── -->
+  <div id="viewProxy" class="hidden">
+    <section class="meta">
+      <div>Your IP: <b id="publicIp">–</b></div>
+      <div id="quotaLine" class="quota"></div>
+      <div id="msg" class="msg"></div>
+    </section>
+
+    <section class="settings">
+      <label>Bind IP <input id="bindIp" placeholder="127.0.0.1" /></label>
+      <label>Port range
+        <span class="row">
+          <input id="portStart" type="number" min="1024" max="65535" />
+          <span class="muted">→</span>
+          <span id="portEnd" class="muted">8801+20</span>
+        </span>
+      </label>
+      <label>Count <input id="portCount" type="number" min="1" max="20" /></label>
+      <label>MCP port <input id="mcpPort" type="number" min="1024" max="65535" /></label>
+      <button id="btnSave">Save</button>
+    </section>
+
+    <section class="settings mcp">
+      <div class="mcp-line">
+        <span class="dot" id="mcpDot"></span>
+        <b>MCP for AI agents</b>
+        <span id="mcpTools" class="muted">–</span>
+      </div>
+      <div class="mcp-line">
+        <code class="mono" id="mcpUrl">–</code>
+        <button class="copy" id="btnCopyMcp">copy</button>
+      </div>
+      <div class="muted">Connect a local agent: <code class="mono" id="mcpCmd">–</code></div>
+    </section>
+
+    <main>
+      <table id="proxyTable">
+        <thead>
+          <tr><th>#</th><th>Proxy (local)</th><th>Country</th><th>Exit IP</th><th>Active</th><th class="num">Req</th><th class="num">↑ / ↓</th><th>OK / Fail</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="rows">
+          <tr><td colspan="9" class="empty">Proxies load automatically when this view opens.</td></tr>
+        </tbody>
+      </table>
+    </main>
+  </div>
 
   <script src="app.js"></script>
   <script src="vpn.js"></script>

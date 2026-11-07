@@ -42,8 +42,13 @@ function renderQuota(state) {
 
 function render(state) {
   $('statusDot').classList.toggle('on', state.running);
-  $('btnToggle').textContent = state.running ? 'Disconnect' : 'Connect';
-  $('btnToggle').classList.toggle('stop', state.running);
+  // the header Connect/Disconnect button was replaced by the VPN/Proxy mode
+  // switch — the element may be gone; guard so render() never throws
+  const toggleBtn = $('btnToggle');
+  if (toggleBtn) {
+    toggleBtn.textContent = state.running ? 'Disconnect' : 'Connect';
+    toggleBtn.classList.toggle('stop', state.running);
+  }
   $('publicIp').textContent = state.publicIp ?? '–';
   $('bindIp').value = state.bindIp ?? '127.0.0.1';
   $('portStart').value = state.portStart ?? 8801;
@@ -55,7 +60,7 @@ function render(state) {
   const rows = $('rows');
   if (!state.proxies?.length) {
     rows.innerHTML =
-      '<tr><td colspan="10" class="empty">Press <b>Connect</b> to fetch your 20 free proxies.</td></tr>';
+      '<tr><td colspan="10" class="empty">Proxies load automatically when this view opens — copy an endpoint or rotate with ⟳.</td></tr>';
     return;
   }
   const q = state.quota;
@@ -111,7 +116,8 @@ document.addEventListener('click', (e) => {
   if (btn) { navigator.clipboard.writeText(btn.dataset.copy ?? ''); return; }
 });
 
-$('btnToggle').onclick = async () => {
+const oldToggle = $('btnToggle');
+if (oldToggle) oldToggle.onclick = async () => {
   const btn = $('btnToggle');
   if (btn.disabled) return; // ignore double-clicks while busy
   const cur = await window.api.state();
