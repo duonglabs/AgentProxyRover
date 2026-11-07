@@ -11,8 +11,8 @@ Branch POC: `poc/vpn-mode` (git worktree `electron-app-vpn-poc`), mọi thay đ�
 
 ```
 apps bất kỳ ──► TUN adapter ──► sing-box ──► http://127.0.0.1:8801 ──► upstream ──► internet
-   (toàn bộ)    (wintun,          (tun2socks)   (local proxy có sẵn     (UrbanVPN /
-                 admin)                          của app)                Proton/pool)
+   (toàn bộ)    (wintun,          (tun2socks)   (local proxy có sẵn     (free upstream
+                 admin)                          của app)                proxy của app)
 ```
 
 - **sing-box 1.14.4** (binary Go duy nhất, kèm `libcronet.dll`) làm data-plane:
@@ -52,6 +52,7 @@ Stop VPN trước, Disconnect sau.
 ## Bản production sẽ khác gì (phase sau)
 
 - sing-box chạy như **Windows Service** — UAC đúng 1 lần lúc cài, toggle
-  không còn prompt (mô hình Proton/Mullvad: UI thường + daemon admin).
+  không còn prompt (mô hình chuẩn của các VPN client thương mại: UI thường +
+  daemon admin).
 - Kill switch thật (strict_route/WFP), split tunneling per-app, chọn proxy
   nào làm exit (location list).
