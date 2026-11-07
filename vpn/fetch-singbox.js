@@ -23,7 +23,8 @@ const URL_ZIP = `https://github.com/SagerNet/sing-box/releases/download/v${SINGB
 const EXE_SHA256 = '8f30682ee198855440d2a7fe070d5d3653793b2d01bb8c85eea88f93bbe7c8b9';
 
 const destBin = path.resolve(__dirname, 'bin');
-const tmpDir = path.resolve(__dirname, '..', '..', '..', 'downloads', `singbox-${SINGBOX_VERSION}`);
+// zip cache: <repo parent>/downloads/singbox-<ver> (project downloads dir, gitignored)
+const tmpDir = path.resolve(__dirname, '..', '..', 'downloads', `singbox-${SINGBOX_VERSION}`);
 
 function fetchToBuffer(url) {
   return new Promise((resolve, reject) => {
