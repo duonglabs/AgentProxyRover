@@ -10,3 +10,4 @@ vpn/bin/*.zip
 # VPN POC fetcher cache (downloaded zips) + runtime state (config/log/pid)
 vpn/.cache/
 state-vpn-poc/
+shot*.png
