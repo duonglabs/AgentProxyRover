@@ -1,3 +1,13 @@
 node_modules/
 dist/
 *.log
+
+# VPN POC — binaries fetched via `node vpn/fetch-singbox.js` (pinned sha256)
+vpn/bin/*.exe
+vpn/bin/*.dll
+vpn/bin/*.zip
+
+# VPN POC fetcher cache (downloaded zips) + runtime state (config/log/pid)
+vpn/.cache/
+state-vpn-poc/
+shot*.png

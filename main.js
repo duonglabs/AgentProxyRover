@@ -5,10 +5,12 @@ const path = require('node:path');
 const { ProxyManager } = require('./lib/proxy-manager');
 const { McpServer } = require('./lib/mcp-server');
 const { buildMcpTools } = require('./lib/mcp-tools');
+const { VpnEngine } = require('./lib/vpn-engine');
 
 let win = null;
 let manager = null;
 let mcp = null;
+let vpn = null;
 
 function createWindow() {
   win = new BrowserWindow({
@@ -53,9 +55,13 @@ function createWindow() {
   }, 5000);
 }
 
-/** App state + MCP server info, for the renderer. */
+/** App state + MCP server info + VPN POC state, for the renderer. */
 function fullState() {
-  return { ...manager.state(), mcp: mcp?.info() ?? { running: false, url: null, tools: [] } };
+  return {
+    ...manager.state(),
+    mcp: mcp?.info() ?? { running: false, url: null, tools: [] },
+    vpn: vpn?.snapshot() ?? null,
+  };
 }
 
 async function startMcp() {
@@ -76,9 +82,38 @@ async function startMcp() {
 
 app.whenReady().then(async () => {
   app.setAppUserModelId('com.agentproxy.app'); // Windows taskbar identity
+
+  // Safety net: a VPN client must not die because stdout broke (EPIPE) or a
+  // socket reset — swallow transport-class errors, log the rest and continue.
+  // (Without this, Electron shows the fatal "JavaScript error in the main
+  // process" dialog and the whole app — proxies + MCP + VPN state — is gone.)
+  const fatalish = (e) => {
+    const m = String(e?.message ?? e);
+    return /EPIPE|ECONNRESET|write after end|stream was destroyed/i.test(m);
+  };
+  process.on('uncaughtException', (e) => {
+    if (fatalish(e)) return;
+    try { console.error('[main] uncaught:', e?.stack ?? e); } catch { /* stdout gone */ }
+  });
+  process.on('unhandledRejection', (e) => {
+    if (fatalish(e)) return;
+    try { console.error('[main] unhandled rejection:', e?.stack ?? e); } catch { /* stdout gone */ }
+  });
+
   manager = new ProxyManager(app.getPath('userData'), () => {
     win?.webContents.send('state', fullState());
   }, { appVersion: app.getVersion() });
+
+  // VPN mode POC — fully additive, managed by lib/vpn-engine.js. Tunnels all
+  // system traffic through the FIRST local proxy port (settings.portStart).
+  vpn = new VpnEngine({
+    userDataDir: app.getPath('userData'),
+    proxyPort: manager.settings.get().portStart,
+    bindIp: manager.settings.get().bindIp,
+    onEvent: (_type, payload) => {
+      win?.webContents.send('vpn-state', payload ?? vpn.snapshot());
+    },
+  });
 
   ipcMain.handle('state', () => fullState());
   ipcMain.handle('start', async () => {
@@ -106,6 +141,27 @@ app.whenReady().then(async () => {
       return { ok: false, error: e.message };
     }
   });
+  ipcMain.handle('vpn:start', async () => {
+    try {
+      const settings = manager.settings.get();
+      vpn.proxyPort = settings.portStart; // tunnel → first local proxy port
+      vpn.bindIp = settings.bindIp; // same IP the proxies actually listen on
+      const state = await vpn.start();
+      return { ok: true, state };
+    } catch (e) {
+      return { ok: false, error: e.message, state: vpn.snapshot() };
+    }
+  });
+  ipcMain.handle('vpn:stop', async () => {
+    try {
+      const state = await vpn.stop();
+      return { ok: true, state };
+    } catch (e) {
+      return { ok: false, error: e.message, state: vpn.snapshot() };
+    }
+  });
+  ipcMain.handle('vpn:status', async () => ({ ok: true, state: await vpn.probe() }));
+
   ipcMain.handle('save-settings', async (_e, patch) => {
     try {
       const settings = manager.saveSettings(patch);
@@ -134,4 +190,5 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   manager?.stop().catch(() => {});
   mcp?.stop().catch(() => {});
+  vpn?.dispose(); // best-effort kill of an elevated sing-box (real cleanup = UAC stop)
 });
