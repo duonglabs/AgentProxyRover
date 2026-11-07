@@ -7,5 +7,6 @@ vpn/bin/*.exe
 vpn/bin/*.dll
 vpn/bin/*.zip
 
-# VPN POC runtime state (config/log/pid written by lib/vpn-engine.js)
+# VPN POC fetcher cache (downloaded zips) + runtime state (config/log/pid)
+vpn/.cache/
 state-vpn-poc/

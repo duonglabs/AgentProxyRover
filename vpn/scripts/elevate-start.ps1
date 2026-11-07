@@ -7,18 +7,21 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 
-# fresh exe copies can be briefly held by the AV scanner — retry a few times
+# NOTE: Windows PowerShell 5.1 joins -ArgumentList elements WITHOUT quoting,
+# so paths with spaces must arrive pre-quoted as one string.
+$argList = 'run -c "' + $Config + '"'
+
 $p = $null
 $lastErr = $null
 for ($i = 1; $i -le 6; $i++) {
   try {
-    $p = Start-Process -FilePath $SingBox `
-      -ArgumentList @('run', '-c', $Config) `
-      -Verb RunAs -WindowStyle Hidden -PassThru
+    $p = Start-Process -FilePath $SingBox -ArgumentList $argList -Verb RunAs -WindowStyle Hidden -PassThru
     break
   } catch {
     $lastErr = $_.Exception.Message
-    if ($lastErr -match 'canceled by the user') { break }   # UAC declined — don't retry
+    # UAC declined (any language spells cancellation its own way — never retry
+    # it); retry ONLY the transient AV lock on a freshly copied exe
+    if ($lastErr -notmatch 'being used by another process') { break }
     Start-Sleep -Milliseconds 1500
   }
 }

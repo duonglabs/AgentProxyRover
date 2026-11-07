@@ -91,6 +91,7 @@ app.whenReady().then(async () => {
   vpn = new VpnEngine({
     userDataDir: app.getPath('userData'),
     proxyPort: manager.settings.get().portStart,
+    bindIp: manager.settings.get().bindIp,
     onEvent: (_type, payload) => {
       win?.webContents.send('vpn-state', payload ?? vpn.snapshot());
     },
@@ -124,7 +125,9 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle('vpn:start', async () => {
     try {
-      vpn.proxyPort = manager.settings.get().portStart; // tunnel → first local proxy port
+      const settings = manager.settings.get();
+      vpn.proxyPort = settings.portStart; // tunnel → first local proxy port
+      vpn.bindIp = settings.bindIp; // same IP the proxies actually listen on
       const state = await vpn.start();
       return { ok: true, state };
     } catch (e) {

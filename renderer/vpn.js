@@ -11,6 +11,7 @@
   const logEl = $('vpnLog');
   if (!window.vpnApi) return;
 
+  let lastLog = null; // logTail arrives on the 5s probe, not on every state push
   const COLORS = { off: '#8a94a6', starting: '#e6b35a', on: '#39c26d', stopping: '#e6b35a' };
   const LABELS = {
     off: 'OFF',
@@ -20,17 +21,20 @@
   };
 
   function render(st) {
-    if (!st) return;
+    if (!st || !st.state) return; // ignore envelopes / partial {pid} payloads → refresh() instead
+    if (st.logTail !== undefined) lastLog = st.logTail;
     dot.style.background = COLORS[st.state] ?? COLORS.off;
+    // 'starting' stays clickable on purpose: it's the only recovery path when
+    // the elevated start wedges (clash API never comes up)
     btn.textContent = st.state === 'on' || st.state === 'starting' ? 'Stop VPN' : 'Start VPN';
-    btn.disabled = st.state === 'starting' || st.state === 'stopping';
+    btn.disabled = st.state === 'stopping';
     let line = LABELS[st.state] ?? st.state;
     if (st.state === 'on') line += ` · pid ${st.pid} · clash :${st.clashPort} → proxy :${st.proxyPort}`;
     if (st.lastError) line += ` · ⚠ ${st.lastError}`;
-    if (!st.binExists) line = 'sing-box.exe missing — run: node vpn/fetch-singbox.js';
+    if (st.binExists === false) line = 'sing-box.exe missing — run: node vpn/fetch-singbox.js';
     info.textContent = line;
-    if (st.logTail) {
-      logEl.textContent = st.logTail;
+    if (lastLog) {
+      logEl.textContent = lastLog;
       logEl.classList.remove('hidden');
     } else {
       logEl.classList.add('hidden');
@@ -49,14 +53,16 @@
   btn.addEventListener('click', async () => {
     const st = (await window.vpnApi.status().catch(() => null))?.state;
     if (st && (st.state === 'on' || st.state === 'starting')) {
-      render(await window.vpnApi.stop().catch(() => null));
+      const res = await window.vpnApi.stop().catch(() => null);
+      render(res?.state);
     } else {
-      render(await window.vpnApi.start().catch(() => null));
+      const res = await window.vpnApi.start().catch(() => null);
+      render(res?.state);
     }
     refresh();
   });
 
   window.vpnApi.onState(render);
   refresh();
-  setInterval(refresh, 5000); // drift/crash detection: probe clash API
+  setInterval(refresh, 5000); // drift/crash detection: probe clash API + fetch log tail
 })();

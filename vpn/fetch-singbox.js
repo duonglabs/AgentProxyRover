@@ -19,12 +19,14 @@ const { execFileSync } = require('node:child_process');
 
 const SINGBOX_VERSION = '1.14.4';
 const URL_ZIP = `https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-windows-amd64.zip`;
-// SHA256 of sing-box.exe inside that zip (recorded on first download, 2026-11-08)
+// SHA256 pins of the two binaries inside that zip (recorded on first download,
+// 2026-11-08). Both run elevated — a mismatch refuses the install.
 const EXE_SHA256 = '8f30682ee198855440d2a7fe070d5d3653793b2d01bb8c85eea88f93bbe7c8b9';
+const DLL_SHA256 = '3217c6260fbca5f16072e0b79735742f40109a63bb0ff88fd6b96dd6b54a2928';
 
 const destBin = path.resolve(__dirname, 'bin');
-// zip cache: <repo parent>/downloads/singbox-<ver> (project downloads dir, gitignored)
-const tmpDir = path.resolve(__dirname, '..', '..', 'downloads', `singbox-${SINGBOX_VERSION}`);
+// zip cache INSIDE the repo (vpn/.cache/ is gitignored) — not in a parent dir
+const tmpDir = path.resolve(__dirname, '.cache', `sing-box-${SINGBOX_VERSION}`);
 
 function fetchToBuffer(url) {
   return new Promise((resolve, reject) => {
@@ -75,16 +77,28 @@ async function main() {
     ], { stdio: 'inherit' });
   }
 
-  const hash = crypto.createHash('sha256').update(fs.readFileSync(exeInZip)).digest('hex');
-  if (hash.toLowerCase() !== EXE_SHA256) {
-    console.error(`REFUSING to install: sha256 mismatch\n  expected ${EXE_SHA256}\n  got      ${hash}`);
-    process.exit(1);
-  }
-  console.log('sha256 OK:', hash);
-
-  for (const f of ['sing-box.exe', 'libcronet.dll']) {
-    fs.copyFileSync(path.join(path.dirname(exeInZip), f), path.join(destBin, f));
-    console.log('installed', path.join(destBin, f));
+  const zipDir = path.dirname(exeInZip);
+  const pins = [
+    ['sing-box.exe', EXE_SHA256],
+    ['libcronet.dll', DLL_SHA256],
+  ];
+  for (const [name, expected] of pins) {
+    const src = path.join(zipDir, name);
+    if (!fs.existsSync(src)) {
+      console.error(
+        `REFUSING to install: ${name} missing from the extracted zip — ` +
+          `release layout changed? Update vpn/fetch-singbox.js.`,
+      );
+      process.exit(1);
+    }
+    const hash = crypto.createHash('sha256').update(fs.readFileSync(src)).digest('hex');
+    if (hash.toLowerCase() !== expected) {
+      console.error(`REFUSING to install ${name}: sha256 mismatch\n  expected ${expected}\n  got      ${hash}`);
+      process.exit(1);
+    }
+    console.log(`sha256 OK (${name}):`, hash);
+    fs.copyFileSync(src, path.join(destBin, name));
+    console.log('installed', path.join(destBin, name));
   }
   console.log('\ndone — VPN mode is ready.');
 }

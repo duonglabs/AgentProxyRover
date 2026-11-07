@@ -44,8 +44,15 @@ const UPSTREAMS = (process.argv.find((a) => a.startsWith('--upstream='))?.split(
   .map((s) => s.trim())
   .filter(Boolean)
   .map((s) => {
-    const [host, port, user, pass] = s.split(':');
-    return { host, port: Number(port), scheme: arg('scheme', 'http'), username: user ?? '', password: pass ?? '' };
+    // password may contain ':' — host:port:user:<rest joined back>
+    const [host, port, user, ...passParts] = s.split(':');
+    return {
+      host,
+      port: Number(port),
+      scheme: arg('scheme', 'http'),
+      username: user ?? '',
+      password: passParts.join(':'),
+    };
   });
 
 const PORT = Number(arg('port', '8801'));
